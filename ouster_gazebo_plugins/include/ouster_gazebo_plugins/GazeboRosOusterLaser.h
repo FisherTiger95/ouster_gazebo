@@ -111,6 +111,9 @@ namespace gazebo
     /// \brief Maximum range to publish
     private: double max_range_;
 
+    /// \brief Update rate
+    private: double update_rate_;
+
     /// \brief Gaussian noise
     private: double gaussian_noise_;
 

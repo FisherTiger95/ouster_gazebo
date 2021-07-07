@@ -151,6 +151,8 @@ void GazeboRosOusterLaser::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf
     gaussian_noise_ = _sdf->GetElement("gaussianNoise")->Get<double>();
   }
 
+  update_rate_ = _parent->UpdateRate();
+
   // Make sure the ROS node for Gazebo has already been initialized
   if (!ros::isInitialized()) {
     ROS_FATAL_STREAM("A ROS node for Gazebo has not been initialized, unable to load plugin. "
@@ -263,7 +265,7 @@ void GazeboRosOusterLaser::OnScan(ConstLaserScanStampedPtr& _msg)
   sensor_msgs::PointCloud2 msg;
   msg.header.frame_id = frame_name_;
   msg.header.stamp = ros::Time(_msg->time().sec(), _msg->time().nsec());
-  msg.fields.resize(5);
+  msg.fields.resize(7);
   msg.fields[0].name = "x";
   msg.fields[0].offset = 0;
   msg.fields[0].datatype = sensor_msgs::PointField::FLOAT32;
@@ -284,10 +286,19 @@ void GazeboRosOusterLaser::OnScan(ConstLaserScanStampedPtr& _msg)
   msg.fields[4].offset = 20;
   msg.fields[4].datatype = sensor_msgs::PointField::UINT16;
   msg.fields[4].count = 1;
+  msg.fields[5].name = "time";
+  msg.fields[5].offset = 24;
+  msg.fields[5].datatype = sensor_msgs::PointField::FLOAT32;
+  msg.fields[5].count = 1;
+  msg.fields[6].name = "noise";
+  msg.fields[6].offset = 28;
+  msg.fields[6].datatype = sensor_msgs::PointField::FLOAT32;
+  msg.fields[6].count = 1;
   msg.data.resize(verticalRangeCount * rangeCount * POINT_STEP);
 
   int i, j;
-  uint8_t *ptr = msg.data.data();
+  uint8_t *ptr    = msg.data.data();
+  float time_inc  = (1.0f/update_rate_)/rangeCount;
   for (i = 0; i < rangeCount; i++) {
     for (j = 0; j < verticalRangeCount; j++) {
 
@@ -298,8 +309,10 @@ void GazeboRosOusterLaser::OnScan(ConstLaserScanStampedPtr& _msg)
       }
 
       // Noise
+      float noise = 0.0;
       if (gaussian_noise_ != 0.0) {
-        r += gaussianKernel(0,gaussian_noise_);
+        noise  = gaussianKernel(0,gaussian_noise_);
+        r     += noise;
       }
 
       // Intensity
@@ -336,6 +349,8 @@ void GazeboRosOusterLaser::OnScan(ConstLaserScanStampedPtr& _msg)
 #else
         *((uint16_t*)(ptr + 20)) = verticalRangeCount - 1 - j; // ring
 #endif
+        *((float*)(ptr + 24)) = time_inc * i;
+        *((float*)(ptr + 28)) = noise;
         ptr += POINT_STEP;
       }
     }
