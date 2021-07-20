@@ -336,21 +336,17 @@ void GazeboRosOusterLaser::OnScan(ConstLaserScanStampedPtr& _msg)
 
       // pAngle is rotated by yAngle:
       if ((MIN_RANGE < r) && (r < MAX_RANGE)) {
-        *((float*)(ptr + 0)) = r * cos(pAngle) * cos(yAngle);
-        *((float*)(ptr + 4)) = r * cos(pAngle) * sin(yAngle);
+        *((float*)(ptr + 0))      = r * cos(pAngle) * cos(yAngle);
+        *((float*)(ptr + 4))      = r * cos(pAngle) * sin(yAngle);
 #if GAZEBO_MAJOR_VERSION > 2
-        *((float*)(ptr + 8)) = r * sin(pAngle);
+        *((float*)(ptr + 8))      = r * sin(pAngle);
 #else
-        *((float*)(ptr + 8)) = -r * sin(pAngle);
+        *((float*)(ptr + 8))      = -r * sin(pAngle);
 #endif
-        *((float*)(ptr + 16)) = intensity;
-#if GAZEBO_MAJOR_VERSION > 2
-        *((uint16_t*)(ptr + 20)) = j; // ring
-#else
-        *((uint16_t*)(ptr + 20)) = verticalRangeCount - 1 - j; // ring
-#endif
-        *((float*)(ptr + 24)) = time_inc * i;
-        *((float*)(ptr + 28)) = noise;
+        *((float*)(ptr + 16))     = intensity;
+        *((uint16_t*)(ptr + 20))  = verticalRangeCount - 1 - j; // ring
+        *((float*)(ptr + 24))     = time_inc * i;
+        *((float*)(ptr + 28))     = noise;
         ptr += POINT_STEP;
       }
     }
